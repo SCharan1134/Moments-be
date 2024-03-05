@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  getRandomUsers,
   getUser,
   getUserFriends,
   resetPassword,
@@ -15,12 +16,13 @@ const router = express.Router();
 router.get("/:id", verifyToken, getUser);
 router.get("/:id/friends", verifyToken, getUserFriends);
 router.post("/send-verification-code", sendVerificationCode);
-router.put("/reset-password/:id", resetPassword);
+router.put("/reset-password/:id", verifyToken, resetPassword);
 router.post(
   "/updateuser/:id",
   verifyToken,
   uploadAvatar.single("avatar"),
   updateUser
 );
+router.get("/random/:userId", getRandomUsers);
 
 export default router;

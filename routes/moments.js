@@ -10,9 +10,14 @@ import { uploadMoment } from "../middleware/multer-middle.js";
 
 const router = express.Router();
 
-router.post("/", verifyToken, uploadMoment.single("file"), createMoment);
+router.post(
+  "/createmoment",
+  verifyToken,
+  uploadMoment.single("moment"),
+  createMoment
+);
 /* READ */
-router.get("/", verifyToken, getFeedMoments);
+router.get("/feed", verifyToken, getFeedMoments);
 router.get("/:userId/moments", verifyToken, getUserMoments);
 
 /* UPDATE */

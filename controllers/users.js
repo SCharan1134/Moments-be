@@ -35,6 +35,29 @@ export const getUserFriends = async (req, res) => {
   }
 };
 
+export const getRandomUsers = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const currentUser = await User.findById(userId);
+
+    if (!currentUser) {
+      return res.status(404).json({ message: "Current user not found" });
+    }
+    const friendIds = currentUser.friends.map((friend) => friend._id);
+
+    // Get random 5 users who are not friends of the current user
+    const randomUsers = await User.aggregate([
+      { $match: { _id: { $nin: [...friendIds, currentUser._id] } } }, // Exclude current user and friends
+      { $sample: { size: 5 } },
+      { $project: { _id: 1, avatarPath: 1, userName: 1 } }, // Randomly select 5 users
+    ]);
+
+    res.status(200).json(randomUsers);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 /* UPDATE */
 export const updateUser = async (req, res) => {
   try {

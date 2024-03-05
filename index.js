@@ -52,7 +52,7 @@ app.post("/upload", uploadAvatar.single("avatarPath"), async (req, res) => {
 /* ROUTES */
 app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
-app.use("/posts", momentRoutes);
+app.use("/moments", momentRoutes);
 app.use("/friends", friendRoutes);
 
 /* MONGOOSE SETUP */
