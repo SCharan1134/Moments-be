@@ -4,7 +4,7 @@ import User from "../models/User.js";
 /* CREATE */
 export const createMoment = async (req, res) => {
   try {
-    const { userId, description, picturePath } = req.body;
+    const { userId, description, momentPath, visibility } = req.body;
     const user = await User.findById(userId);
     const newMoment = new moment({
       userId,
@@ -13,15 +13,17 @@ export const createMoment = async (req, res) => {
       location: user.location,
       description,
       userPicturePath: user.picturePath,
-      picturePath,
+      momentPath,
+      visibility,
       likes: {},
       comments: [],
     });
     await newMoment.save();
 
-    const moment = await moment.find();
-    res.status(201).json(moment);
+    // const moment = await moment.find();
+    res.status(201).json(newMoment);
   } catch (err) {
+    console.log(err);
     res.status(409).json({ message: err.message });
   }
 };
@@ -29,8 +31,20 @@ export const createMoment = async (req, res) => {
 /* READ */
 export const getFeedMoments = async (req, res) => {
   try {
-    const moment = await moment.find();
-    res.status(200).json(moment);
+    const currentUser = req.user; // Assuming you have the current user object in req.user
+
+    // Retrieve public moments and moments of friends
+    const moments = await moment.find({
+      $or: [
+        { visibility: "public" }, // Public moments
+        {
+          visibility: "friends", // Friends' moments
+          userId: { $in: currentUser.friends }, // Assuming currentUser.friends contains an array of user IDs who are friends
+        },
+      ],
+    });
+
+    res.status(200).json(moments);
   } catch (err) {
     res.status(404).json({ message: err.message });
   }
@@ -38,9 +52,32 @@ export const getFeedMoments = async (req, res) => {
 
 export const getUserMoments = async (req, res) => {
   try {
+    const currentUser = req.user; // Assuming you have the current user object in req.user
     const { userId } = req.params;
-    const moment = await moment.find({ userId });
-    res.status(200).json(moment);
+
+    // Check if the requested user is the current user
+    if (userId === currentUser.id) {
+      // If the requested user is the current user, send all moments including private
+      const moments = await moment.find({ userId });
+      res.status(200).json(moments);
+    } else {
+      // If the requested user is not the current user, apply feed logic
+      const moments = await moment.find({
+        $and: [
+          { userId },
+          {
+            $or: [
+              { visibility: "public" },
+              {
+                visibility: "friends",
+                userId: { $in: currentUser.friends },
+              },
+            ],
+          },
+        ],
+      });
+      res.status(200).json(moments);
+    }
   } catch (err) {
     res.status(404).json({ message: err.message });
   }

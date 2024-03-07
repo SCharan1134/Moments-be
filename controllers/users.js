@@ -35,6 +35,42 @@ export const getUserFriends = async (req, res) => {
   }
 };
 
+export const getRandomUsers = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const currentUser = await User.findById(userId);
+
+    if (!currentUser) {
+      return res.status(404).json({ message: "Current user not found" });
+    }
+    const friendIds = currentUser.friends.map((friend) => friend._id);
+    const friendRequestIds = currentUser.friendRequests.map(
+      (request) => request
+    );
+
+    const randomUsers = await User.find(
+      {
+        $and: [
+          {
+            _id: { $nin: [...friendIds, ...friendRequestIds, currentUser._id] },
+          },
+          {
+            $nor: [
+              { friends: currentUser._id },
+              { friendRequests: currentUser._id },
+            ],
+          },
+        ],
+      },
+      { _id: 1, avatarPath: 1, userName: 1 }
+    ).limit(5);
+
+    res.status(200).json(randomUsers);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 /* UPDATE */
 export const updateUser = async (req, res) => {
   try {
