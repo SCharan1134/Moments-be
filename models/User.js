@@ -38,6 +38,10 @@ const UserSchema = new mongoose.Schema(
       type: Array,
       default: [],
     },
+    pendingFriends: {
+      type: Array,
+      default: [],
+    },
     friendRequests: {
       type: Array,
       default: [],

@@ -8,9 +8,10 @@ export const addFriendRequest = async (req, res) => {
 
     if (
       !user.friends.includes(friendId) &&
-      !user.friendRequests.includes(friendId)
+      !user.friendRequests.includes(friendId) &&
+      !user.pendingFriends.includes(friendId)
     ) {
-      user.friendRequests.push(friendId);
+      user.pendingFriends.push(friendId);
       friend.friendRequests.push(id);
 
       await user.save();
@@ -39,7 +40,7 @@ export const acceptFriendRequest = async (req, res) => {
       user.friendRequests = user.friendRequests.filter((id) => id !== friendId);
       user.friends.push(friendId);
 
-      friend.friendRequests = friend.friendRequests.filter((id) => id !== id);
+      friend.pendingFriends = friend.pendingFriends.filter((id) => id !== id);
       friend.friends.push(id);
 
       await user.save();
@@ -87,10 +88,36 @@ export const removeFriendRequest = async (req, res) => {
     const friend = await User.findById(friendId);
 
     // Check if the friendId is in friendRequests
+    if (user.pendingFriends.includes(friendId)) {
+      // Remove friendId from friendRequests for both users
+      user.pendingFriends = user.pendingFriends.filter((id) => id !== friendId);
+      friend.friendRequests = friend.friendRequests.filter((id) => id !== id);
+
+      await user.save();
+      await friend.save();
+
+      res.status(200).json({ message: "Friend request removed successfully" });
+    } else {
+      res
+        .status(400)
+        .json({ message: "No pending friend request from this user" });
+    }
+  } catch (err) {
+    res.status(404).json({ message: err.message });
+  }
+};
+
+export const declineFriendRequest = async (req, res) => {
+  try {
+    const { id, friendId } = req.params;
+    const user = await User.findById(id);
+    const friend = await User.findById(friendId);
+
+    // Check if the friendId is in friendRequests
     if (user.friendRequests.includes(friendId)) {
       // Remove friendId from friendRequests for both users
       user.friendRequests = user.friendRequests.filter((id) => id !== friendId);
-      friend.friendRequests = friend.friendRequests.filter((id) => id !== id);
+      friend.pendingFriends = friend.pendingFriends.filter((id) => id !== id);
 
       await user.save();
       await friend.save();

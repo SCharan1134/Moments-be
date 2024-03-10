@@ -47,17 +47,28 @@ export const getRandomUsers = async (req, res) => {
     const friendRequestIds = currentUser.friendRequests.map(
       (request) => request
     );
+    const pendingFriendsIds = currentUser.pendingFriends.map(
+      (request) => request
+    );
 
     const randomUsers = await User.find(
       {
         $and: [
           {
-            _id: { $nin: [...friendIds, ...friendRequestIds, currentUser._id] },
+            _id: {
+              $nin: [
+                ...friendIds,
+                ...friendRequestIds,
+                ...pendingFriendsIds,
+                currentUser._id,
+              ],
+            },
           },
           {
             $nor: [
               { friends: currentUser._id },
               { friendRequests: currentUser._id },
+              { pendingFriends: currentUser._id },
             ],
           },
         ],
@@ -76,21 +87,28 @@ export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
     const { userName, avatarPath } = req.body;
-    console.log(req.body);
     let user = await User.findById(id).exec();
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    user.userName = userName || user.userName;
-    user.avatarPath = avatarPath || user.avatarPath;
+    if (userName && userName !== user.userName) {
+      // Check if the provided username already exists
+      const existingUser = await User.findOne({ userName });
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+      user.userName = userName;
+    }
 
+    user.avatarPath = avatarPath || user.avatarPath;
     user = await user.save();
 
     return res
       .status(200)
       .json({ message: "User details updated successfully", user });
   } catch (error) {
+    console.log(error);
     res.status(404).json({ message: error.message });
   }
 };
