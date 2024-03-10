@@ -5,14 +5,9 @@ import User from "../models/User.js";
 export const createMoment = async (req, res) => {
   try {
     const { userId, description, momentPath, visibility } = req.body;
-    const user = await User.findById(userId);
     const newMoment = new moment({
       userId,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      location: user.location,
       description,
-      userPicturePath: user.picturePath,
       momentPath,
       visibility,
       likes: {},
@@ -20,7 +15,7 @@ export const createMoment = async (req, res) => {
     });
     await newMoment.save();
 
-    // const moment = await moment.find();
+    // const moments = await moment.find();
     res.status(201).json(newMoment);
   } catch (err) {
     console.log(err);
@@ -32,7 +27,7 @@ export const createMoment = async (req, res) => {
 export const getFeedMoments = async (req, res) => {
   try {
     const currentUser = req.user; // Assuming you have the current user object in req.user
-
+    console.log(currentUser.friends);
     // Retrieve public moments and moments of friends
     const moments = await moment.find({
       $or: [
