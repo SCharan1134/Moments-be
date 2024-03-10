@@ -7,18 +7,9 @@ const momentSchema = mongoose.Schema(
       ref: "User",
       required: true,
     },
-    firstName: {
-      type: String,
-      required: true,
-    },
-    lastName: {
-      type: String,
-      required: true,
-    },
-    location: String,
     description: String,
     momentPath: String,
-    userPicturePath: String,
+    avatarPath: String,
     likes: {
       type: Map,
       of: Boolean,
