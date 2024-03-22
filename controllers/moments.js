@@ -26,12 +26,33 @@ export const createMoment = async (req, res) => {
 /* READ */
 export const getFeedMoments = async (req, res) => {
   try {
-    const currentUser = req.user; // Assuming you have the current user object in req.user
-    console.log(currentUser.friends);
+    const { userId } = req.params; // Assuming you have the current user object in req.user
+    const currentUser = await User.findById(userId); // const friendsIds = currentUser.friends.map((friend) => friend._id);
     // Retrieve public moments and moments of friends
     const moments = await moment.find({
       $or: [
         { visibility: "public" }, // Public moments
+        {
+          visibility: "friends", // Friends' moments
+          userId: { $in: currentUser.friends }, // Assuming currentUser.friends contains an array of user IDs who are friends
+        },
+      ],
+    });
+
+    res.status(200).json(moments);
+  } catch (err) {
+    res.status(404).json({ message: err.message });
+  }
+};
+
+export const getFriendsFeedMoments = async (req, res) => {
+  try {
+    const { userId } = req.params; // Assuming you have the current user object in req.user
+    const currentUser = await User.findById(userId); // const friendsIds = currentUser.friends.map((friend) => friend._id);
+    // Retrieve public moments and moments of friends
+    const moments = await moment.find({
+      $or: [
+        // Public moments
         {
           visibility: "friends", // Friends' moments
           userId: { $in: currentUser.friends }, // Assuming currentUser.friends contains an array of user IDs who are friends
