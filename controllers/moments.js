@@ -11,7 +11,7 @@ export const createMoment = async (req, res) => {
       momentPath,
       visibility,
       likes: {},
-      comments: [],
+      comments: {},
     });
     await newMoment.save();
 
@@ -83,18 +83,18 @@ export const likeMoment = async (req, res) => {
   try {
     const { id } = req.params;
     const { userId } = req.body;
-    const moment = await moment.findById(id);
-    const isLiked = moment.likes.get(userId);
+    const Moment = await moment.findById(id);
+    const isLiked = Moment.likes.get(userId);
 
     if (isLiked) {
-      moment.likes.delete(userId);
+      Moment.likes.delete(userId);
     } else {
-      moment.likes.set(userId, true);
+      Moment.likes.set(userId, true);
     }
 
     const updatedmoment = await moment.findByIdAndUpdate(
       id,
-      { likes: moment.likes },
+      { likes: Moment.likes },
       { new: true }
     );
 

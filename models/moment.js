@@ -20,8 +20,8 @@ const momentSchema = mongoose.Schema(
       default: "public", // Default visibility is public
     },
     comments: {
-      type: Array,
-      default: [],
+      type: Map,
+      of: String,
     },
   },
   { timestamps: true }
