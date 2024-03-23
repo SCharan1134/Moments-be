@@ -52,7 +52,7 @@ export const getFriendsFeedMoments = async (req, res) => {
     // Retrieve public moments and moments of friends
     const moments = await moment.find({
       $or: [
-        // Public moments
+        // { visibility: "public" }, // Public moments
         {
           visibility: "friends", // Friends' moments
           userId: { $in: currentUser.friends }, // Assuming currentUser.friends contains an array of user IDs who are friends
@@ -68,31 +68,44 @@ export const getFriendsFeedMoments = async (req, res) => {
 
 export const getUserMoments = async (req, res) => {
   try {
-    const currentUser = req.user; // Assuming you have the current user object in req.user
-    const { userId } = req.params;
+    // const currentUser = req.body; // Assuming you have the current user object in req.user
+    const { userId, currentId } = req.params;
 
     // Check if the requested user is the current user
-    if (userId === currentUser.id) {
+    if (userId === currentId) {
       // If the requested user is the current user, send all moments including private
       const moments = await moment.find({ userId });
       res.status(200).json(moments);
     } else {
-      // If the requested user is not the current user, apply feed logic
-      const moments = await moment.find({
-        $and: [
-          { userId },
-          {
-            $or: [
-              { visibility: "public" },
-              {
-                visibility: "friends",
-                userId: { $in: currentUser.friends },
-              },
-            ],
-          },
-        ],
-      });
-      res.status(200).json(moments);
+      // If the requested user is not the current user
+      const currentUser = await User.findById(currentId);
+
+      // Check if the requested user is a friend of the current user
+      if (currentUser.friends.includes(userId)) {
+        // If the requested user is a friend, send moments with public and friends visibility
+        const moments = await moment.find({
+          $and: [
+            { userId },
+            {
+              $or: [
+                { visibility: "public" },
+                {
+                  visibility: "friends",
+                  userId: { $in: currentUser.friends },
+                },
+              ],
+            },
+          ],
+        });
+        res.status(200).json(moments);
+      } else {
+        // If the requested user is not a friend, send only public moments
+        const moments = await moment.find({
+          userId,
+          visibility: "public",
+        });
+        res.status(200).json(moments);
+      }
     }
   } catch (err) {
     res.status(404).json({ message: err.message });

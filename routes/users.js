@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  getNotification,
   getRandomUsers,
   getUser,
   getUserFriends,
@@ -14,6 +15,7 @@ const router = express.Router();
 
 /* READ */
 router.get("/:id", verifyToken, getUser);
+router.get("/:id/notification", verifyToken, getNotification);
 router.get("/:id/friends", verifyToken, getUserFriends);
 router.post("/send-verification-code", sendVerificationCode);
 router.put("/reset-password/:id", verifyToken, resetPassword);

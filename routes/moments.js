@@ -20,7 +20,7 @@ router.post(
 /* READ */
 router.get("/:userId/feed", verifyToken, getFeedMoments);
 router.get("/:userId/feed/friend", verifyToken, getFriendsFeedMoments);
-router.get("/:userId/moments", verifyToken, getUserMoments);
+router.get("/:userId/:currentId/moments", verifyToken, getUserMoments);
 
 /* UPDATE */
 router.patch("/:id/like", verifyToken, likeMoment);
