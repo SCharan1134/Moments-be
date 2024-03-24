@@ -42,6 +42,12 @@ export const register = async (req, res) => {
       return res.status(400).json({ error: "Email already registered" });
     }
 
+    // existingUser = await User.findOne({ userName });
+
+    // if (existingUser) {
+    //   return res.status(400).json({ error: "UserName already registered" });
+    // }
+
     const verificationCode = generateVerificationCode();
 
     // Send verification email
