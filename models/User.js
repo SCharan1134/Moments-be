@@ -35,15 +35,15 @@ const UserSchema = new mongoose.Schema(
       default: " ",
     },
     friends: {
-      type: Array,
+      type: [mongoose.Schema.Types.ObjectId],
       default: [],
     },
     pendingFriends: {
-      type: Array,
+      type: [mongoose.Schema.Types.ObjectId],
       default: [],
     },
     friendRequests: {
-      type: Array,
+      type: [mongoose.Schema.Types.ObjectId],
       default: [],
     },
     isActive: {
@@ -59,6 +59,14 @@ const UserSchema = new mongoose.Schema(
     },
     recievedverification: {
       type: String,
+    },
+    favoriteMoments: {
+      type: [mongoose.Schema.Types.ObjectId],
+      default: [],
+    },
+    archiveMoments: {
+      type: [mongoose.Schema.Types.ObjectId],
+      default: [],
     },
   },
   { timestamps: true }

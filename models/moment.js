@@ -23,6 +23,10 @@ const momentSchema = mongoose.Schema(
       type: Map,
       of: String,
     },
+    isArchive: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

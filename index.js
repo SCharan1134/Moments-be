@@ -12,10 +12,7 @@ import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
 import momentRoutes from "./routes/moments.js";
 import friendRoutes from "./routes/friends.js";
-import { register } from "./controllers/auth.js";
-import { createMoment } from "./controllers/moments.js";
-import { verifyToken } from "./middleware/auth.js";
-import User from "./models/User.js";
+import memoryRoutes from "./routes/memory.js";
 
 /* CONFIGURATIONS */
 const __filename = fileURLToPath(import.meta.url);
@@ -33,6 +30,7 @@ app.use(bodyParser.urlencoded({ limit: "30mb", extended: true }));
 app.use(cors());
 app.use("/avatar", express.static(path.join(__dirname, "public/avatar")));
 app.use("/moments", express.static(path.join(__dirname, "public/moments")));
+app.use("/memory", express.static(path.join(__dirname, "public/memory")));
 
 /* FILE STORAGE */
 
@@ -54,6 +52,7 @@ app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
 app.use("/moments", momentRoutes);
 app.use("/friends", friendRoutes);
+app.use("/memories", memoryRoutes);
 
 /* MONGOOSE SETUP */
 const PORT = process.env.PORT || 6001;
