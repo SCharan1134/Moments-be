@@ -92,7 +92,7 @@ export const removeFriendRequest = async (req, res) => {
       // Remove friendId from friendRequests for both users
       user.pendingFriends = user.pendingFriends.filter((id) => id !== friendId);
       friend.friendRequests = friend.friendRequests.filter((id) => id !== id);
-
+      console.log(user);
       await user.save();
       await friend.save();
 

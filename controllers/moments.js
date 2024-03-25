@@ -174,10 +174,13 @@ export const removeArchive = async (req, res) => {
     await User.findByIdAndUpdate(userId, {
       $pull: { archiveMoments: momentId },
     });
+    const user = await User.findById(userId);
 
-    res
-      .status(200)
-      .json({ message: "Moment removed from archive successfully." });
+    const archiveMoments = await moment.find({
+      _id: { $in: user.archiveMoments },
+    });
+
+    res.status(200).json(archiveMoments);
   } catch (error) {
     res.status(500).json({ message: "Internal server error." });
   }
