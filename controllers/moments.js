@@ -12,7 +12,7 @@ export const createMoment = async (req, res) => {
       momentPath,
       visibility,
       likes: {},
-      comments: {},
+      comments: [],
     });
     await newMoment.save();
 

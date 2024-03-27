@@ -19,10 +19,12 @@ const momentSchema = mongoose.Schema(
       enum: ["public", "private", "friends"], // Possible values for visibility
       default: "public", // Default visibility is public
     },
-    comments: {
-      type: Map,
-      of: String,
-    },
+    comments: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Comment", // Reference to the Comment model
+      },
+    ],
     isArchive: {
       type: Boolean,
       default: false,
