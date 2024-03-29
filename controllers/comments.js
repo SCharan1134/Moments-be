@@ -1,24 +1,26 @@
 import mongoose from "mongoose";
 import moment from "../models/moment.js";
 import Comment from "../models/Comment.js";
+import User from "../models/User.js";
 
 export const createMomentComment = async (req, res) => {
   try {
-    const { userId, momentId, description } = req.body;
+    const { momentId } = req.params;
+    const { userId, description } = req.body;
 
     // Create a new comment
     const newComment = new Comment({
-      userId,
-      description,
+      userId: userId,
+      description: description,
       likes: {},
       replies: [],
     });
 
     // Save the new comment to the database
-    const savedComment = await newComment.save();
 
     // Find the moment by ID
     const currentMoment = await moment.findById(momentId);
+    const savedComment = await newComment.save();
 
     if (!currentMoment) {
       return res.status(404).json({ message: "Moment not found" });
@@ -29,7 +31,6 @@ export const createMomentComment = async (req, res) => {
 
     // Save the updated moment
     await currentMoment.save();
-
     res.status(201).json(savedComment);
   } catch (error) {
     console.error("Error creating moment comment:", error);
@@ -39,7 +40,8 @@ export const createMomentComment = async (req, res) => {
 
 export const replyComment = async (req, res) => {
   try {
-    const { userId, commentId, description } = req.body;
+    const { commentId } = req.params;
+    const { userId, description } = req.body;
 
     // Create a new comment for the reply
     const newComment = new Comment({
@@ -75,7 +77,8 @@ export const replyComment = async (req, res) => {
 // patch like
 export const likeComment = async (req, res) => {
   try {
-    const { userId, commentId } = req.body;
+    const { commentId } = req.params;
+    const { userId } = req.body;
     const comment = await Comment.findById(commentId);
 
     if (!comment) {
@@ -100,6 +103,21 @@ export const likeComment = async (req, res) => {
     res.status(200).json(updatedComment);
   } catch (error) {
     console.error("Error liking/unliking comment:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getlikes = async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const comment = await Comment.findById(commentId);
+
+    if (!comment) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+    res.status(200).json(comment);
+  } catch (error) {
+    console.error("Error getting likes of comment:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -148,5 +166,96 @@ export const deleteComment = async (req, res) => {
   } catch (error) {
     console.error("Error deleting comment:", error);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getAllRepliesForComment = async (req, res) => {
+  try {
+    const { commentId } = req.params;
+
+    // Find the comment by ID
+    const comment = await Comment.findById(commentId);
+
+    if (!comment) {
+      return res.status(404).json({ message: "Comment not found." });
+    }
+
+    // Retrieve all replies for the comment, including nested replies
+    const allReplies = await getAllNestedReplies(comment.replies);
+
+    const commentsWithUserDetails = await Promise.all(
+      allReplies.map(async (comment) => {
+        const user = await User.findById(comment.userId);
+        if (user) {
+          const { userName, avatarPath } = user;
+          return { ...comment.toObject(), userName, avatarPath }; // Merge user details with comment
+        } else {
+          return comment.toObject();
+        }
+      })
+    );
+
+    res.status(200).json(commentsWithUserDetails);
+  } catch (error) {
+    console.error("Error fetching all replies for comment:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+const getAllNestedReplies = async (replyIds) => {
+  const replies = await Comment.find({ _id: { $in: replyIds } });
+
+  // for (const reply of replies) {
+  //   if (reply.replies.length > 0) {
+  //     reply.replies = await getAllNestedReplies(reply.replies);
+  //   }
+  // }
+
+  return replies;
+};
+
+const getAllNestedComments = async (commentIds) => {
+  const comments = await Comment.find({ _id: { $in: commentIds } });
+
+  // for (const comment of comments) {
+  //   if (comment.replies.length > 0) {
+  //     comment.replies = await getAllNestedComments(comment.replies);
+  //   }
+  // }
+
+  return comments;
+};
+
+export const getAllCommentsForMoment = async (req, res) => {
+  try {
+    const { momentId } = req.params;
+
+    // Find the moment by ID
+    const moments = await moment.findById(momentId);
+
+    if (!moments) {
+      return res.status(404).json({ message: "Moment not found." });
+    }
+
+    // Retrieve all comments for the moment, including nested comments
+    const allComments = await getAllNestedComments(moments.comments);
+
+    // Fetch user details for each comment and add username and avatarPath
+    const commentsWithUserDetails = await Promise.all(
+      allComments.map(async (comment) => {
+        const user = await User.findById(comment.userId);
+        if (user) {
+          const { userName, avatarPath } = user;
+          return { ...comment.toObject(), userName, avatarPath }; // Merge user details with comment
+        } else {
+          return comment.toObject();
+        }
+      })
+    );
+
+    res.status(200).json(commentsWithUserDetails);
+  } catch (error) {
+    console.error("Error fetching all comments for moment:", error);
+    res.status(500).json({ message: "Internal server error." });
   }
 };

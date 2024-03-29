@@ -46,6 +46,17 @@ export const deleteMoment = async (req, res) => {
 };
 
 /* READ */
+export const getMoment = async (req, res) => {
+  try {
+    const { momentId } = req.params; // Assuming you have the current user object in req.user
+    // Retrieve public moments and moments of friends
+    const moments = await moment.findById(momentId);
+
+    res.status(200).json(moments);
+  } catch (err) {
+    res.status(404).json({ message: err.message });
+  }
+};
 export const getFeedMoments = async (req, res) => {
   try {
     const { userId } = req.params; // Assuming you have the current user object in req.user
@@ -205,6 +216,78 @@ export const getArchiveMoments = async (req, res) => {
     res.status(200).json(archiveMoments);
   } catch (error) {
     console.error("Error fetching archive moments:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+export const addFavorite = async (req, res) => {
+  try {
+    const { userId, momentId } = req.body;
+
+    // Update the moment document to set isFavorite to true
+    await moment.findByIdAndUpdate(momentId, { isFavorite: true });
+
+    // Update the user document to add the momentId to favoriteMoments array
+    await User.findByIdAndUpdate(userId, {
+      $push: { favoriteMoments: momentId },
+    });
+
+    let user = await User.findById(userId);
+
+    res
+      .status(200)
+      .json({ message: "Moment added to favorites successfully.", user });
+  } catch (error) {
+    console.error("Error adding moment to favorites:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+export const removeFavorite = async (req, res) => {
+  try {
+    const { userId, momentId } = req.body;
+
+    // Update the user document to remove the momentId from favoriteMoments array
+    await User.findByIdAndUpdate(userId, {
+      $pull: { favoriteMoments: momentId },
+    });
+
+    // Retrieve the updated list of favorite moments for the user
+    const user = await User.findById(userId);
+    const favoriteMoments = await moment.find({
+      _id: { $in: user.favoriteMoments },
+    });
+
+    res.status(200).json({
+      message: "Moment removed from favorites successfully.",
+      favoriteMoments,
+      user,
+    });
+  } catch (error) {
+    console.error("Error removing moment from favorites:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+export const getFavoriteMoments = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Find the user by ID
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Retrieve the favorite moments of the user
+    const favoriteMoments = await moment.find({
+      _id: { $in: user.favoriteMoments },
+    });
+
+    res.status(200).json(favoriteMoments);
+  } catch (error) {
+    console.error("Error fetching favorite moments:", error);
     res.status(500).json({ message: "Internal server error." });
   }
 };
