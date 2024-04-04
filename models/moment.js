@@ -10,9 +10,9 @@ const momentSchema = mongoose.Schema(
     description: String,
     momentPath: String,
     avatarPath: String,
-    likes: {
+    emojis: {
       type: Map,
-      of: Boolean,
+      of: String, // Store the emoji as a string
     },
     visibility: {
       type: String,

@@ -13,6 +13,7 @@ export const createMoment = async (req, res) => {
       visibility,
       likes: {},
       comments: [],
+      emojis: {},
     });
     await newMoment.save();
 
@@ -293,26 +294,61 @@ export const getFavoriteMoments = async (req, res) => {
 };
 
 /* UPDATE */
-export const likeMoment = async (req, res) => {
+// export const likeMoment = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { userId } = req.body;
+//     const Moment = await moment.findById(id);
+//     const isLiked = Moment.likes.get(userId);
+
+//     if (isLiked) {
+//       Moment.likes.delete(userId);
+//     } else {
+//       Moment.likes.set(userId, true);
+//     }
+
+//     const updatedmoment = await moment.findByIdAndUpdate(
+//       id,
+//       { likes: Moment.likes },
+//       { new: true }
+//     );
+
+//     res.status(200).json(updatedmoment);
+//   } catch (err) {
+//     res.status(404).json({ message: err.message });
+//   }
+// };
+
+export const addEmojiToMoment = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId } = req.body;
-    const Moment = await moment.findById(id);
-    const isLiked = Moment.likes.get(userId);
+    const { userId, emojis } = req.body; // Assuming the emoji is sent in the request body as 'emoji'
 
-    if (isLiked) {
-      Moment.likes.delete(userId);
+    const momentToUpdate = await moment.findById(id);
+
+    // Check if the user has already added an emoji
+    const existingEmoji = momentToUpdate.emojis.get(userId);
+
+    if (existingEmoji) {
+      // If the user has already added an emoji and it's the same as the new one, remove it
+      if (existingEmoji === emojis) {
+        momentToUpdate.emojis.delete(userId);
+      } else {
+        // If the user has already added an emoji but it's different from the new one, update it
+        momentToUpdate.emojis.set(userId, emojis);
+      }
     } else {
-      Moment.likes.set(userId, true);
+      // If the user hasn't added an emoji yet, add the new one
+      momentToUpdate.emojis.set(userId, emojis);
     }
 
-    const updatedmoment = await moment.findByIdAndUpdate(
+    // Update the moment with the new emojis
+    const updatedMoment = await moment.findByIdAndUpdate(
       id,
-      { likes: Moment.likes },
+      { emojis: momentToUpdate.emojis },
       { new: true }
     );
-
-    res.status(200).json(updatedmoment);
+    res.status(200).json(updatedMoment);
   } catch (err) {
     res.status(404).json({ message: err.message });
   }

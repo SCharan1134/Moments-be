@@ -3,7 +3,7 @@ import {
   createMoment,
   getUserMoments,
   getFeedMoments,
-  likeMoment,
+  // likeMoment,
   getFriendsFeedMoments,
   deleteMoment,
   getArchiveMoments,
@@ -13,6 +13,7 @@ import {
   getFavoriteMoments,
   addFavorite,
   removeFavorite,
+  addEmojiToMoment,
 } from "../controllers/moments.js";
 import { verifyToken } from "../middleware/auth.js";
 import { uploadMoment } from "../middleware/multer-middle.js";
@@ -41,6 +42,7 @@ router.post("/favorite/add", verifyToken, addFavorite);
 router.post("/favorite/remove", verifyToken, removeFavorite);
 
 /* UPDATE */
-router.patch("/:id/like", verifyToken, likeMoment);
+// router.patch("/:id/like", verifyToken, likeMoment);
+router.patch("/:id/emoji", verifyToken, addEmojiToMoment);
 
 export default router;
