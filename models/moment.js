@@ -8,7 +8,14 @@ const momentSchema = mongoose.Schema(
       required: true,
     },
     description: String,
-    momentPath: String,
+    momentPath: {
+      type: Array,
+      of: String,
+      validate: [
+        arrayMaxLengthValidator,
+        "Moment path array exceeds maximum length of 6",
+      ],
+    },
     avatarPath: String,
     emojis: {
       type: Map,
@@ -32,6 +39,10 @@ const momentSchema = mongoose.Schema(
   },
   { timestamps: true }
 );
+
+function arrayMaxLengthValidator(value) {
+  return value.length <= 6;
+}
 
 const moment = mongoose.model("moment", momentSchema);
 

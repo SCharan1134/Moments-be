@@ -322,23 +322,19 @@ export const getFavoriteMoments = async (req, res) => {
 export const addEmojiToMoment = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId, emojis } = req.body; // Assuming the emoji is sent in the request body as 'emoji'
+    const { userId, emojis } = req.body;
 
     const momentToUpdate = await moment.findById(id);
 
-    // Check if the user has already added an emoji
     const existingEmoji = momentToUpdate.emojis.get(userId);
 
     if (existingEmoji) {
-      // If the user has already added an emoji and it's the same as the new one, remove it
       if (existingEmoji === emojis) {
         momentToUpdate.emojis.delete(userId);
       } else {
-        // If the user has already added an emoji but it's different from the new one, update it
         momentToUpdate.emojis.set(userId, emojis);
       }
     } else {
-      // If the user hasn't added an emoji yet, add the new one
       momentToUpdate.emojis.set(userId, emojis);
     }
 

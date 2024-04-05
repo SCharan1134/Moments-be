@@ -23,7 +23,7 @@ const router = express.Router();
 router.post(
   "/createmoment",
   verifyToken,
-  uploadMoment.single("moment"),
+  uploadMoment.array("moment", 6),
   createMoment
 );
 /* READ */
