@@ -14,6 +14,7 @@ import {
   addFavorite,
   removeFavorite,
   addEmojiToMoment,
+  getUsersReactedToMoment,
 } from "../controllers/moments.js";
 import { verifyToken } from "../middleware/auth.js";
 import { uploadMoment } from "../middleware/multer-middle.js";
@@ -44,5 +45,6 @@ router.post("/favorite/remove", verifyToken, removeFavorite);
 /* UPDATE */
 // router.patch("/:id/like", verifyToken, likeMoment);
 router.patch("/:id/emoji", verifyToken, addEmojiToMoment);
+router.get("/:id/emojis", verifyToken, getUsersReactedToMoment);
 
 export default router;

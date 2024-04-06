@@ -349,3 +349,43 @@ export const addEmojiToMoment = async (req, res) => {
     res.status(404).json({ message: err.message });
   }
 };
+
+export const getUsersReactedToMoment = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find the moment by ID
+    const momentData = await moment.findById(id);
+    if (!momentData) {
+      return res.status(404).json({ message: "Moment not found" });
+    }
+
+    // Get the list of user IDs who reacted to the moment
+    const userIds = Array.from(momentData.emojis.keys());
+
+    // Fetch user data for each user ID
+    const usersData = await Promise.all(
+      userIds.map(async (userId) => {
+        const userData = await User.findById(userId);
+        if (userData) {
+          const emoji = momentData.emojis.get(userId);
+          return {
+            _id: userData._id,
+            avatarPath: userData.avatarPath,
+            userName: userData.userName,
+            emoji: emoji, // Include the emoji in the user data
+          };
+        } else {
+          return null;
+        }
+      })
+    );
+
+    // Filter out null values (user data not found for some user IDs)
+    const filteredUsersData = usersData.filter((userData) => userData !== null);
+
+    res.status(200).json(filteredUsersData);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
