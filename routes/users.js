@@ -4,6 +4,7 @@ import {
   getRandomUsers,
   getUser,
   getUserFriends,
+  getUsersForSidebar,
   resetPassword,
   searchFriendsByUsername,
   searchUsersByUsername,
@@ -17,9 +18,10 @@ const router = express.Router();
 
 /* READ */
 router.get("/:id", verifyToken, getUser);
-router.get("/search/user", verifyToken, searchUsersByUsername);
+router.post("/search/user", verifyToken, searchUsersByUsername);
 router.get("/:id/notification", verifyToken, getNotification);
 router.get("/:id/friends", verifyToken, getUserFriends);
+router.get("/:id/sidebar", verifyToken, getUsersForSidebar);
 router.post("/:id/search/friends", verifyToken, searchFriendsByUsername);
 router.post("/send-verification-code", sendVerificationCode);
 router.put("/reset-password/:id", verifyToken, resetPassword);

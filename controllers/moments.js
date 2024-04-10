@@ -1,6 +1,7 @@
 import moment from "../models/moment.js";
 import User from "../models/User.js";
 import fs from "fs";
+import { getReceiverSocketId, io } from "../socket/socket.js";
 
 /* CREATE */
 export const createMoment = async (req, res) => {
@@ -344,6 +345,25 @@ export const addEmojiToMoment = async (req, res) => {
       { emojis: momentToUpdate.emojis },
       { new: true }
     );
+
+    const reactedUser = await User.findById(userId);
+    const { userName, avatarPath } = reactedUser;
+
+    const response = {
+      username: reactedUser.userName,
+      avatarPath: reactedUser.avatarPath,
+      userId: userId,
+      momentPath: momentToUpdate.momentPath[0], // Assuming momentPath is an array
+      momentId: updatedMoment._id,
+      emojiReacted: emojis,
+    };
+
+    const receiverSocketId = getReceiverSocketId(momentToUpdate.userId);
+    if (receiverSocketId) {
+      // io.to(<socket_id>).emit() used to send events to specific client
+      io.to(receiverSocketId).emit("newReaction", response);
+    }
+
     res.status(200).json(updatedMoment);
   } catch (err) {
     res.status(404).json({ message: err.message });

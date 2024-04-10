@@ -283,3 +283,20 @@ export const resetPassword = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const getUsersForSidebar = async (req, res) => {
+  try {
+    const { id: userId } = req.params;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    const friendIds = user.friends;
+    const friends = await User.find({ _id: { $in: friendIds } });
+
+    res.status(200).json(friends);
+  } catch (error) {
+    console.error("Error in getUsersForSidebar controller", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};

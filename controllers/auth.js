@@ -4,6 +4,7 @@ import User from "../models/User.js";
 import nodemailer from "nodemailer";
 
 import { generateVerificationCode } from "../utils/helper/generatecode.js";
+import generateTokenAndSetCookie from "../utils/generateToken.js";
 
 const transporter = nodemailer.createTransport({
   // host: "smtp.gmail.com",
@@ -97,11 +98,22 @@ export const login = async (req, res) => {
       return res.status(400).json({ msg: "please verify your email address" });
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+    generateTokenAndSetCookie(user._id, res);
     delete user.password;
     const { password: _, ...userData } = user.toObject();
     res.status(200).json({ token, user: userData });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+export const logout = (req, res) => {
+  try {
+    res.cookie("jwt", "", { maxAge: 0 });
+    res.status(200).json({ message: "Logged out successfully" });
+  } catch (error) {
+    console.log("Error in logout controller", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
