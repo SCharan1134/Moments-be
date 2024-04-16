@@ -102,10 +102,12 @@ export const searchFriendsByUsername = async (req, res) => {
 
 export const searchUsersByUsername = async (req, res) => {
   try {
+    const { id } = req.params;
     const { query } = req.body;
 
     // Find users whose usernames match the search query
     const users = await User.find({
+      _id: { $ne: id }, // Exclude the logged-in user
       userName: { $regex: query, $options: "i" },
     });
 

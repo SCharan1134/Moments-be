@@ -18,7 +18,7 @@ const router = express.Router();
 
 /* READ */
 router.get("/:id", verifyToken, getUser);
-router.post("/search/user", verifyToken, searchUsersByUsername);
+router.post("/search/user/:id", verifyToken, searchUsersByUsername);
 router.get("/:id/notification", verifyToken, getNotification);
 router.get("/:id/friends", verifyToken, getUserFriends);
 router.get("/:id/sidebar", verifyToken, getUsersForSidebar);
