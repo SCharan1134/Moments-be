@@ -28,7 +28,7 @@ router.put("/reset-password/:id", verifyToken, resetPassword);
 router.post(
   "/updateuser/:id",
   verifyToken,
-  uploadAvatar.single("avatar"),
+  // uploadAvatar.single("avatar"),
   updateUser
 );
 router.get("/random/:userId", getRandomUsers);
