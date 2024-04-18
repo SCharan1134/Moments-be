@@ -10,7 +10,7 @@ export const getUser = async (req, res) => {
   try {
     const { id } = req.params;
     const user = await User.findById(id).select(
-      "-password -createdAt -updatedAt -isverified -verificationCode -isActive -pendingFriends -friendRequests"
+      "-password -createdAt -updatedAt -isverified -verificationCode -isActive "
     );
     res.status(200).json(user);
   } catch (err) {
@@ -35,14 +35,94 @@ export const getUserFriends = async (req, res) => {
     const friends = await Promise.all(
       user.friends.map((id) => User.findById(id))
     );
-    const formattedFriends = friends.map(
-      ({ _id, firstName, lastName, picturePath }) => {
-        return { _id, firstName, lastName, picturePath };
-      }
-    );
+    const formattedFriends = friends.map(({ _id, userName, avatarPath }) => {
+      return { _id, userName, avatarPath };
+    });
     res.status(200).json(formattedFriends);
   } catch (err) {
     res.status(404).json({ message: err.message });
+  }
+};
+
+const getFriendsWithDetails = async (userId) => {
+  try {
+    // Find the user by ID
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return { error: "User not found" };
+    }
+
+    // Retrieve detailed information for the user's friends
+    const friendsDetails = await Promise.all(
+      user.friends.map(async (friendId) => {
+        const friend = await User.findById(friendId);
+        return {
+          _id: friend._id,
+          userName: friend.userName,
+          avatarPath: friend.avatarPath,
+        };
+      })
+    );
+
+    return friendsDetails;
+  } catch (err) {
+    console.error(err);
+    return { error: "Internal server error" };
+  }
+};
+
+export const searchFriendsByUsername = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { query } = req.body;
+
+    const friends = await getFriendsWithDetails(id);
+
+    if (friends.error) {
+      return res.status(404).json({ message: friends.error });
+    }
+
+    // Filter the friends by username
+    const filteredFriends = friends.filter((friend) =>
+      friend.userName.toLowerCase().includes(query.toLowerCase())
+    );
+
+    if (filteredFriends.length === 0) {
+      return res.status(200).json({});
+    }
+
+    res.status(200).json(filteredFriends);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const searchUsersByUsername = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { query } = req.body;
+
+    // Find users whose usernames match the search query
+    const users = await User.find({
+      _id: { $ne: id }, // Exclude the logged-in user
+      userName: { $regex: query, $options: "i" },
+    });
+
+    if (users.length === 0) {
+      return res.status(404).json({ message: "No matching users found" });
+    }
+
+    const formattedUsers = users.map(({ _id, userName, avatarPath }) => {
+      return { _id, userName, avatarPath };
+    });
+
+    res.status(200).json(formattedUsers);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -98,6 +178,7 @@ export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
     const { userName, avatarPath } = req.body;
+    console.log(avatarPath);
     let user = await User.findById(id).exec();
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -203,5 +284,22 @@ export const resetPassword = async (req, res) => {
   } catch (err) {
     console.error("Error resetting password:", err);
     return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getUsersForSidebar = async (req, res) => {
+  try {
+    const { id: userId } = req.params;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    const friendIds = user.friends;
+    const friends = await User.find({ _id: { $in: friendIds } });
+
+    res.status(200).json(friends);
+  } catch (error) {
+    console.error("Error in getUsersForSidebar controller", error.message);
+    res.status(500).json({ error: "Internal server error" });
   }
 };

@@ -13,6 +13,9 @@ import userRoutes from "./routes/users.js";
 import momentRoutes from "./routes/moments.js";
 import friendRoutes from "./routes/friends.js";
 import memoryRoutes from "./routes/memory.js";
+import commmentRoutes from "./routes/comments.js";
+import messageRoutes from "./routes/message.js";
+import { app, server } from "./socket/socket.js";
 
 /* CONFIGURATIONS */
 const __filename = fileURLToPath(import.meta.url);
@@ -20,7 +23,7 @@ const __dirname = path.dirname(__filename);
 console.log(__filename, __dirname);
 dotenv.config();
 
-const app = express();
+// const app = express();
 app.use(express.json());
 app.use(helmet());
 app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
@@ -53,6 +56,8 @@ app.use("/users", userRoutes);
 app.use("/moments", momentRoutes);
 app.use("/friends", friendRoutes);
 app.use("/memories", memoryRoutes);
+app.use("/comments", commmentRoutes);
+app.use("/messages", messageRoutes);
 
 /* MONGOOSE SETUP */
 const PORT = process.env.PORT || 6001;
@@ -62,7 +67,7 @@ mongoose
     useUnifiedTopology: true,
   })
   .then(() => {
-    app.listen(PORT, () => console.log(`Server Port: ${PORT}`));
+    server.listen(PORT, () => console.log(`Server Port: ${PORT}`));
 
     /* ADD DATA ONE TIME */
     // User.insertMany(users);

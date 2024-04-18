@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import { getReceiverSocketId, io } from "../socket/socket.js";
 
 export const addFriendRequest = async (req, res) => {
   try {
@@ -16,6 +17,12 @@ export const addFriendRequest = async (req, res) => {
 
       await user.save();
       await friend.save();
+
+      const receiverSocketId = getReceiverSocketId(friendId);
+      if (receiverSocketId) {
+        // io.to(<socket_id>).emit() used to send events to specific client
+        io.to(receiverSocketId).emit("newFriendRequest", id);
+      }
 
       res.status(200).json({ message: "Friend request sent successfully" });
     } else {
@@ -46,6 +53,12 @@ export const acceptFriendRequest = async (req, res) => {
       await user.save();
       await friend.save();
 
+      const receiverSocketId = getReceiverSocketId(friendId);
+      if (receiverSocketId) {
+        // io.to(<socket_id>).emit() used to send events to specific client
+        io.to(receiverSocketId).emit("acceptFriendRequest", id);
+      }
+
       res.status(200).json({ message: "Friend request accepted successfully" });
     } else {
       res
@@ -72,6 +85,12 @@ export const removeFriend = async (req, res) => {
       await user.save();
       await friend.save();
 
+      const receiverSocketId = getReceiverSocketId(friendId);
+      if (receiverSocketId) {
+        // io.to(<socket_id>).emit() used to send events to specific client
+        io.to(receiverSocketId).emit("removeFriend", id);
+      }
+
       res.status(200).json({ message: "Friend removed successfully" });
     } else {
       res.status(400).json({ message: "User is not in your friends list" });
@@ -92,9 +111,15 @@ export const removeFriendRequest = async (req, res) => {
       // Remove friendId from friendRequests for both users
       user.pendingFriends = user.pendingFriends.filter((id) => id !== friendId);
       friend.friendRequests = friend.friendRequests.filter((id) => id !== id);
-
+      console.log(user);
       await user.save();
       await friend.save();
+
+      const receiverSocketId = getReceiverSocketId(friendId);
+      if (receiverSocketId) {
+        // io.to(<socket_id>).emit() used to send events to specific client
+        io.to(receiverSocketId).emit("removeFriendRequest", id);
+      }
 
       res.status(200).json({ message: "Friend request removed successfully" });
     } else {
@@ -121,6 +146,12 @@ export const declineFriendRequest = async (req, res) => {
 
       await user.save();
       await friend.save();
+
+      const receiverSocketId = getReceiverSocketId(friendId);
+      if (receiverSocketId) {
+        // io.to(<socket_id>).emit() used to send events to specific client
+        io.to(receiverSocketId).emit("declineFriendRequest", id);
+      }
 
       res.status(200).json({ message: "Friend request removed successfully" });
     } else {

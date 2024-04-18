@@ -1,6 +1,7 @@
 import moment from "../models/moment.js";
 import User from "../models/User.js";
 import fs from "fs";
+import { getReceiverSocketId, io } from "../socket/socket.js";
 
 /* CREATE */
 export const createMoment = async (req, res) => {
@@ -12,7 +13,8 @@ export const createMoment = async (req, res) => {
       momentPath,
       visibility,
       likes: {},
-      comments: {},
+      comments: [],
+      emojis: {},
     });
     await newMoment.save();
 
@@ -46,6 +48,17 @@ export const deleteMoment = async (req, res) => {
 };
 
 /* READ */
+export const getMoment = async (req, res) => {
+  try {
+    const { momentId } = req.params; // Assuming you have the current user object in req.user
+    // Retrieve public moments and moments of friends
+    const moments = await moment.findById(momentId);
+
+    res.status(200).json(moments);
+  } catch (err) {
+    res.status(404).json({ message: err.message });
+  }
+};
 export const getFeedMoments = async (req, res) => {
   try {
     const { userId } = req.params; // Assuming you have the current user object in req.user
@@ -174,10 +187,13 @@ export const removeArchive = async (req, res) => {
     await User.findByIdAndUpdate(userId, {
       $pull: { archiveMoments: momentId },
     });
+    const user = await User.findById(userId);
 
-    res
-      .status(200)
-      .json({ message: "Moment removed from archive successfully." });
+    const archiveMoments = await moment.find({
+      _id: { $in: user.archiveMoments },
+    });
+
+    res.status(200).json(archiveMoments);
   } catch (error) {
     res.status(500).json({ message: "Internal server error." });
   }
@@ -206,28 +222,190 @@ export const getArchiveMoments = async (req, res) => {
   }
 };
 
-/* UPDATE */
-export const likeMoment = async (req, res) => {
+export const addFavorite = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { userId } = req.body;
-    const Moment = await moment.findById(id);
-    const isLiked = Moment.likes.get(userId);
+    const { userId, momentId } = req.body;
 
-    if (isLiked) {
-      Moment.likes.delete(userId);
-    } else {
-      Moment.likes.set(userId, true);
+    // Update the moment document to set isFavorite to true
+    await moment.findByIdAndUpdate(momentId, { isFavorite: true });
+
+    // Update the user document to add the momentId to favoriteMoments array
+    await User.findByIdAndUpdate(userId, {
+      $push: { favoriteMoments: momentId },
+    });
+
+    let user = await User.findById(userId);
+
+    res
+      .status(200)
+      .json({ message: "Moment added to favorites successfully.", user });
+  } catch (error) {
+    console.error("Error adding moment to favorites:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+export const removeFavorite = async (req, res) => {
+  try {
+    const { userId, momentId } = req.body;
+
+    // Update the user document to remove the momentId from favoriteMoments array
+    await User.findByIdAndUpdate(userId, {
+      $pull: { favoriteMoments: momentId },
+    });
+
+    // Retrieve the updated list of favorite moments for the user
+    const user = await User.findById(userId);
+    const favoriteMoments = await moment.find({
+      _id: { $in: user.favoriteMoments },
+    });
+
+    res.status(200).json({
+      message: "Moment removed from favorites successfully.",
+      favoriteMoments,
+      user,
+    });
+  } catch (error) {
+    console.error("Error removing moment from favorites:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+export const getFavoriteMoments = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Find the user by ID
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
     }
 
-    const updatedmoment = await moment.findByIdAndUpdate(
+    // Retrieve the favorite moments of the user
+    const favoriteMoments = await moment.find({
+      _id: { $in: user.favoriteMoments },
+    });
+
+    res.status(200).json(favoriteMoments);
+  } catch (error) {
+    console.error("Error fetching favorite moments:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+/* UPDATE */
+// export const likeMoment = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { userId } = req.body;
+//     const Moment = await moment.findById(id);
+//     const isLiked = Moment.likes.get(userId);
+
+//     if (isLiked) {
+//       Moment.likes.delete(userId);
+//     } else {
+//       Moment.likes.set(userId, true);
+//     }
+
+//     const updatedmoment = await moment.findByIdAndUpdate(
+//       id,
+//       { likes: Moment.likes },
+//       { new: true }
+//     );
+
+//     res.status(200).json(updatedmoment);
+//   } catch (err) {
+//     res.status(404).json({ message: err.message });
+//   }
+// };
+
+export const addEmojiToMoment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId, emojis } = req.body;
+
+    const momentToUpdate = await moment.findById(id);
+
+    const existingEmoji = momentToUpdate.emojis.get(userId);
+
+    if (existingEmoji) {
+      if (existingEmoji === emojis) {
+        momentToUpdate.emojis.delete(userId);
+      } else {
+        momentToUpdate.emojis.set(userId, emojis);
+      }
+    } else {
+      momentToUpdate.emojis.set(userId, emojis);
+    }
+
+    // Update the moment with the new emojis
+    const updatedMoment = await moment.findByIdAndUpdate(
       id,
-      { likes: Moment.likes },
+      { emojis: momentToUpdate.emojis },
       { new: true }
     );
 
-    res.status(200).json(updatedmoment);
+    const reactedUser = await User.findById(userId);
+    const { userName, avatarPath } = reactedUser;
+
+    const response = {
+      username: reactedUser.userName,
+      avatarPath: reactedUser.avatarPath,
+      userId: userId,
+      momentPath: momentToUpdate.momentPath[0], // Assuming momentPath is an array
+      momentId: updatedMoment._id,
+      emojiReacted: emojis,
+    };
+
+    const receiverSocketId = getReceiverSocketId(momentToUpdate.userId);
+    if (receiverSocketId) {
+      // io.to(<socket_id>).emit() used to send events to specific client
+      io.to(receiverSocketId).emit("newReaction", response);
+    }
+
+    res.status(200).json(updatedMoment);
   } catch (err) {
     res.status(404).json({ message: err.message });
+  }
+};
+
+export const getUsersReactedToMoment = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find the moment by ID
+    const momentData = await moment.findById(id);
+    if (!momentData) {
+      return res.status(404).json({ message: "Moment not found" });
+    }
+
+    // Get the list of user IDs who reacted to the moment
+    const userIds = Array.from(momentData.emojis.keys());
+
+    // Fetch user data for each user ID
+    const usersData = await Promise.all(
+      userIds.map(async (userId) => {
+        const userData = await User.findById(userId);
+        if (userData) {
+          const emoji = momentData.emojis.get(userId);
+          return {
+            _id: userData._id,
+            avatarPath: userData.avatarPath,
+            userName: userData.userName,
+            emoji: emoji, // Include the emoji in the user data
+          };
+        } else {
+          return null;
+        }
+      })
+    );
+
+    // Filter out null values (user data not found for some user IDs)
+    const filteredUsersData = usersData.filter((userData) => userData !== null);
+
+    res.status(200).json(filteredUsersData);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };

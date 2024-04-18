@@ -8,21 +8,30 @@ const momentSchema = mongoose.Schema(
       required: true,
     },
     description: String,
-    momentPath: String,
+    momentPath: {
+      type: Array,
+      of: String,
+      validate: [
+        arrayMaxLengthValidator,
+        "Moment path array exceeds maximum length of 6",
+      ],
+    },
     avatarPath: String,
-    likes: {
+    emojis: {
       type: Map,
-      of: Boolean,
+      of: String, // Store the emoji as a string
     },
     visibility: {
       type: String,
       enum: ["public", "private", "friends"], // Possible values for visibility
       default: "public", // Default visibility is public
     },
-    comments: {
-      type: Map,
-      of: String,
-    },
+    comments: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Comment", // Reference to the Comment model
+      },
+    ],
     isArchive: {
       type: Boolean,
       default: false,
@@ -30,6 +39,10 @@ const momentSchema = mongoose.Schema(
   },
   { timestamps: true }
 );
+
+function arrayMaxLengthValidator(value) {
+  return value.length <= 6;
+}
 
 const moment = mongoose.model("moment", momentSchema);
 

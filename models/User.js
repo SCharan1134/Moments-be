@@ -35,15 +35,15 @@ const UserSchema = new mongoose.Schema(
       default: " ",
     },
     friends: {
-      type: [mongoose.Schema.Types.ObjectId],
+      type: Array,
       default: [],
     },
     pendingFriends: {
-      type: [mongoose.Schema.Types.ObjectId],
+      type: Array,
       default: [],
     },
     friendRequests: {
-      type: [mongoose.Schema.Types.ObjectId],
+      type: Array,
       default: [],
     },
     isActive: {

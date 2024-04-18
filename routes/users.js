@@ -4,7 +4,10 @@ import {
   getRandomUsers,
   getUser,
   getUserFriends,
+  getUsersForSidebar,
   resetPassword,
+  searchFriendsByUsername,
+  searchUsersByUsername,
   sendVerificationCode,
   updateUser,
 } from "../controllers/users.js";
@@ -15,14 +18,17 @@ const router = express.Router();
 
 /* READ */
 router.get("/:id", verifyToken, getUser);
+router.post("/search/user/:id", verifyToken, searchUsersByUsername);
 router.get("/:id/notification", verifyToken, getNotification);
 router.get("/:id/friends", verifyToken, getUserFriends);
+router.get("/:id/sidebar", verifyToken, getUsersForSidebar);
+router.post("/:id/search/friends", verifyToken, searchFriendsByUsername);
 router.post("/send-verification-code", sendVerificationCode);
 router.put("/reset-password/:id", verifyToken, resetPassword);
 router.post(
   "/updateuser/:id",
   verifyToken,
-  uploadAvatar.single("avatar"),
+  // uploadAvatar.single("avatar"),
   updateUser
 );
 router.get("/random/:userId", getRandomUsers);
