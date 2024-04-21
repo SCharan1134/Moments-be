@@ -12,7 +12,7 @@
   "license": "ISC",
   "description": "server for moments which is a place to share moments",
   "dependencies": {
-    "bcrypt": "^5.1.1",
+    "argon2": "^0.40.1",
     "body-parser": "^1.20.2",
     "cloudinary": "^2.0.1",
     "cookie-parser": "^1.4.6",
