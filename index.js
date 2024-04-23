@@ -39,12 +39,11 @@ app.use("/memory", express.static(path.join(__dirname, "public/memory")));
 
 /* ROUTES WITH FILES */
 // app.post("/auth/register", upload.single("picture"), register);
-import { uploadAvatar } from "./middleware/multer-middle.js";
-app.post("/upload", uploadAvatar.single("avatarPath"), async (req, res) => {
+app.get("/test", async (req, res) => {
   try {
     // const { id } = req.params;
     // const user = await User.findById(id);
-    res.json(req.body);
+    res.json("hello this is moments");
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

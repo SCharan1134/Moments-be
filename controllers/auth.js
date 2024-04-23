@@ -1,7 +1,7 @@
-import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import nodemailer from "nodemailer";
+import argon2 from "argon2";
 
 import { generateVerificationCode } from "../utils/helper/generatecode.js";
 import generateTokenAndSetCookie from "../utils/generateToken.js";
@@ -12,8 +12,8 @@ const transporter = nodemailer.createTransport({
   // port: 587,
   // secure: false,
   auth: {
-    user: "sricharanrayala24@gmail.com",
-    pass: "nzibubwilncbgcka",
+    user: "themoments2024@gmail.com",
+    pass: "xoen awrn wzuz eyzl",
   },
 });
 
@@ -43,26 +43,20 @@ export const register = async (req, res) => {
       return res.status(400).json({ error: "Email already registered" });
     }
 
-    // existingUser = await User.findOne({ userName });
-
-    // if (existingUser) {
-    //   return res.status(400).json({ error: "UserName already registered" });
-    // }
-
     const verificationCode = generateVerificationCode();
 
     // Send verification email
     const mailOptions = {
-      from: "sricharanrayala24@gmail.com",
+      from: "themoments2024@gmail.com",
       to: email,
       subject: "Email Verification",
       text: `Your verification code is: ${verificationCode}`,
     };
 
-    // await transporter.sendMail(mailOptions);
+    await transporter.sendMail(mailOptions);
 
-    const salt = await bcrypt.genSalt();
-    const passwordHash = await bcrypt.hash(password, salt);
+    // const salt = await bcrypt.genSalt();
+    const passwordHash = await argon2.hash(password);
 
     const newUser = new User({
       firstName,
@@ -91,7 +85,7 @@ export const login = async (req, res) => {
     const user = await User.findOne({ email: email });
     if (!user) return res.status(400).json({ msg: "User does not exist. " });
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await argon2.verify(user.password, password);
     if (!isMatch) return res.status(400).json({ msg: "Invalid credentials. " });
 
     if (!user.isverified)
