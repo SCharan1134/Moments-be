@@ -64,20 +64,22 @@ export const getFeedMoments = async (req, res) => {
     const { userId } = req.params; // Assuming you have the current user object in req.user
     const currentUser = await User.findById(userId); // const friendsIds = currentUser.friends.map((friend) => friend._id);
     // Retrieve public moments and moments of friends
-    const moments = await moment.find({
-      $and: [
-        { isArchive: false },
-        {
-          $or: [
-            { visibility: "public" }, // Public moments
-            {
-              visibility: "friends", // Friends' moments
-              userId: { $in: currentUser.friends }, // Assuming currentUser.friends contains an array of user IDs who are friends
-            },
-          ],
-        },
-      ],
-    });
+    const moments = await moment
+      .find({
+        $and: [
+          { isArchive: false },
+          {
+            $or: [
+              { visibility: "public" }, // Public moments
+              {
+                visibility: "friends", // Friends' moments
+                userId: { $in: currentUser.friends }, // Assuming currentUser.friends contains an array of user IDs who are friends
+              },
+            ],
+          },
+        ],
+      })
+      .sort({ createdAt: -1 });
 
     res.status(200).json(moments);
   } catch (err) {
@@ -90,20 +92,22 @@ export const getFriendsFeedMoments = async (req, res) => {
     const { userId } = req.params; // Assuming you have the current user object in req.user
     const currentUser = await User.findById(userId); // const friendsIds = currentUser.friends.map((friend) => friend._id);
     // Retrieve public moments and moments of friends
-    const moments = await moment.find({
-      $and: [
-        { isArchive: false },
-        {
-          $or: [
-            // { visibility: "public" }, // Public moments
-            {
-              visibility: "friends", // Friends' moments
-              userId: { $in: currentUser.friends }, // Assuming currentUser.friends contains an array of user IDs who are friends
-            },
-          ],
-        },
-      ],
-    });
+    const moments = await moment
+      .find({
+        $and: [
+          { isArchive: false },
+          {
+            $or: [
+              // { visibility: "public" }, // Public moments
+              {
+                visibility: "friends", // Friends' moments
+                userId: { $in: currentUser.friends }, // Assuming currentUser.friends contains an array of user IDs who are friends
+              },
+            ],
+          },
+        ],
+      })
+      .sort({ createdAt: -1 });
 
     res.status(200).json(moments);
   } catch (err) {
@@ -128,28 +132,32 @@ export const getUserMoments = async (req, res) => {
       // Check if the requested user is a friend of the current user
       if (currentUser.friends.includes(userId)) {
         // If the requested user is a friend, send moments with public and friends visibility
-        const moments = await moment.find({
-          $and: [
-            { userId },
-            { isArchive: false },
-            {
-              $or: [
-                { visibility: "public" },
-                {
-                  visibility: "friends",
-                  userId: { $in: currentUser.friends },
-                },
-              ],
-            },
-          ],
-        });
+        const moments = await moment
+          .find({
+            $and: [
+              { userId },
+              { isArchive: false },
+              {
+                $or: [
+                  { visibility: "public" },
+                  {
+                    visibility: "friends",
+                    userId: { $in: currentUser.friends },
+                  },
+                ],
+              },
+            ],
+          })
+          .sort({ createdAt: -1 });
         res.status(200).json(moments);
       } else {
         // If the requested user is not a friend, send only public moments
-        const moments = await moment.find({
-          userId,
-          visibility: "public",
-        });
+        const moments = await moment
+          .find({
+            userId,
+            visibility: "public",
+          })
+          .sort({ createdAt: -1 });
         res.status(200).json(moments);
       }
     }
@@ -211,9 +219,11 @@ export const getArchiveMoments = async (req, res) => {
     }
 
     // Retrieve the archive moments of the user
-    const archiveMoments = await moment.find({
-      _id: { $in: user.archiveMoments },
-    });
+    const archiveMoments = await moment
+      .find({
+        _id: { $in: user.archiveMoments },
+      })
+      .sort({ createdAt: -1 });
 
     res.status(200).json(archiveMoments);
   } catch (error) {
@@ -283,9 +293,11 @@ export const getFavoriteMoments = async (req, res) => {
     }
 
     // Retrieve the favorite moments of the user
-    const favoriteMoments = await moment.find({
-      _id: { $in: user.favoriteMoments },
-    });
+    const favoriteMoments = await moment
+      .find({
+        _id: { $in: user.favoriteMoments },
+      })
+      .sort({ createdAt: -1 });
 
     res.status(200).json(favoriteMoments);
   } catch (error) {

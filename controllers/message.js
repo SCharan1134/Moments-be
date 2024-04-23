@@ -16,6 +16,7 @@ export const sendMessage = async (req, res) => {
       conversation = await Conversation.create({
         participants: [senderId, recieverId],
       });
+      await conversation.save();
     }
 
     const newMessage = new Message({
@@ -28,7 +29,16 @@ export const sendMessage = async (req, res) => {
       conversation.messages.push(newMessage._id);
     }
 
-    await Promise.all([conversation.save(), newMessage.save()]);
+    await Promise.all([
+      conversation.updateOne({
+        lastMessage: {
+          text: message,
+          sender: senderId,
+          seen: false,
+        },
+      }),
+      newMessage.save(),
+    ]);
 
     const receiverSocketId = getReceiverSocketId(recieverId);
     if (receiverSocketId) {
