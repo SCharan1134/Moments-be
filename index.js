@@ -30,7 +30,25 @@ app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 app.use(morgan("common"));
 app.use(bodyParser.json({ limit: "30mb", extended: true }));
 app.use(bodyParser.urlencoded({ limit: "30mb", extended: true }));
-app.use(cors());
+const prodOrigin = [
+  "https://moments-deogbrlae-sri-charans-projects.vercel.app/",
+  "https://moments-green.vercel.app",
+];
+const devOrigin = ["http://localhost:5173"];
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (prodOrigin.includes(origin)) {
+        console.log(origin, prodOrigin);
+        callback(null, true);
+      } else {
+        callback(new Error("not allowed origins"));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  })
+);
 app.use("/avatar", express.static(path.join(__dirname, "public/avatar")));
 app.use("/moments", express.static(path.join(__dirname, "public/moments")));
 app.use("/memory", express.static(path.join(__dirname, "public/memory")));
