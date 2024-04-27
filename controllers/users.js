@@ -134,38 +134,30 @@ export const getRandomUsers = async (req, res) => {
     if (!currentUser) {
       return res.status(404).json({ message: "Current user not found" });
     }
-    const friendIds = currentUser.friends.map((friend) => friend._id);
-    const friendRequestIds = currentUser.friendRequests.map(
-      (request) => request
-    );
-    const pendingFriendsIds = currentUser.pendingFriends.map(
-      (request) => request
-    );
+    const friendIds = currentUser.friends;
+    const friendRequestIds = currentUser.friendRequests;
+    const pendingFriendsIds = currentUser.pendingFriends;
 
-    const randomUsers = await User.find(
+    let randomUsers = await User.find(
       {
         $and: [
           {
             _id: {
-              $nin: [
-                ...friendIds,
-                ...friendRequestIds,
-                ...pendingFriendsIds,
-                currentUser._id,
-              ],
+              $nin: [currentUser._id],
             },
-          },
-          {
-            $nor: [
-              { friends: currentUser._id },
-              { friendRequests: currentUser._id },
-              { pendingFriends: currentUser._id },
-            ],
           },
         ],
       },
       { _id: 1, avatarPath: 1, userName: 1 }
     ).limit(5);
+
+    randomUsers = randomUsers.filter((user) => !friendIds.includes(user._id));
+    randomUsers = randomUsers.filter(
+      (user) => !friendRequestIds.includes(user._id)
+    );
+    randomUsers = randomUsers.filter(
+      (user) => !pendingFriendsIds.includes(user._id)
+    );
 
     res.status(200).json(randomUsers);
   } catch (err) {

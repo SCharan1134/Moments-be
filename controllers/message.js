@@ -6,31 +6,40 @@ import { getReceiverSocketId, io } from "../socket/socket.js";
 export const sendMessage = async (req, res) => {
   try {
     const { message, senderId } = req.body;
-    const { id: recieverId } = req.params;
+    const { id: recipientId } = req.params;
 
     let conversation = await Conversation.findOne({
-      participants: { $all: [senderId, recieverId] },
+      participants: { $all: [senderId, recipientId] },
     });
 
     if (!conversation) {
-      conversation = await Conversation.create({
-        participants: [senderId, recieverId],
+      conversation = new Conversation({
+        participants: [senderId, recipientId],
+        lastMessage: {
+          text: message,
+          sender: senderId,
+        },
       });
+      await conversation.save();
     }
 
     const newMessage = new Message({
-      senderId,
-      recieverId,
-      message,
+      conversationId: conversation._id,
+      sender: senderId,
+      text: message,
     });
 
-    if (newMessage) {
-      conversation.messages.push(newMessage._id);
-    }
+    await Promise.all([
+      newMessage.save(),
+      conversation.updateOne({
+        lastMessage: {
+          text: message,
+          sender: senderId,
+        },
+      }),
+    ]);
 
-    await Promise.all([conversation.save(), newMessage.save()]);
-
-    const receiverSocketId = getReceiverSocketId(recieverId);
+    const receiverSocketId = getReceiverSocketId(recipientId);
     if (receiverSocketId) {
       // io.to(<socket_id>).emit() used to send events to specific client
       io.to(receiverSocketId).emit("newMessage", newMessage);
@@ -50,11 +59,14 @@ export const getMessages = async (req, res) => {
 
     let conversation = await Conversation.findOne({
       participants: { $all: [senderId, userToChatId] },
-    }).populate("messages");
+    });
 
-    if (!conversation) return res.status(200).json([]);
+    if (!conversation)
+      return res.status(404).json({ error: "Conversation not found" });
 
-    const messages = conversation.messages;
+    const messages = await Message.find({
+      conversationId: conversation._id,
+    }).sort({ createdAt: 1 });
 
     res.status(200).json(messages); // Status 200 for successful retrieval
   } catch (error) {
@@ -63,26 +75,43 @@ export const getMessages = async (req, res) => {
   }
 };
 
+export const getConversations = async (req, res) => {
+  try {
+    const { id: senderId } = req.params;
+    const conversations = await Conversation.find({
+      participants: senderId,
+    }).populate({
+      path: "participants",
+      select: "userName avatarPath",
+    });
+
+    // remove the current user from the participants array
+    conversations.forEach((conversation) => {
+      conversation.participants = conversation.participants.filter(
+        (participant) => participant._id.toString() !== senderId.toString()
+      );
+    });
+    res.status(200).json(conversations);
+  } catch (error) {
+    console.error("Error in getConversations controller", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 export const getConversation = async (req, res) => {
   try {
-    const { id: userToChatId } = req.params; // Assuming id is the parameter for userToChatId
-    const { senderId } = req.body; // Assuming senderId is provided in the request body
+    const { id } = req.params;
+    const { senderId } = req.body;
 
-    let conversation = await Conversation.findOne({
-      participants: { $all: [senderId, userToChatId] },
-    }).populate("messages");
+    const conversation = await Conversation.findById(id).populate({
+      path: "participants",
+      select: "userName avatarPath",
+    });
 
-    if (!conversation) {
-      conversation = await Conversation.create({
-        participants: [senderId, userToChatId],
-      });
-
-      await conversation.save();
-    }
-
-    const messages = conversation.messages;
-
-    res.status(200).json(conversation); // Status 200 for successful retrieval
+    conversation.participants = conversation.participants.filter(
+      (participant) => participant._id.toString() !== senderId.toString()
+    );
+    res.status(200).json(conversation);
   } catch (error) {
     console.error("Error in getConversation controller", error.message);
     res.status(500).json({ error: "Internal server error" });
