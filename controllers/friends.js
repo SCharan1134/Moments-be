@@ -24,7 +24,7 @@ export const addFriendRequest = async (req, res) => {
         io.to(receiverSocketId).emit("newFriendRequest", id);
       }
 
-      res.status(200).json({ message: "Friend request sent successfully" });
+      res.status(200).json(user);
     } else {
       res
         .status(400)
@@ -59,7 +59,7 @@ export const acceptFriendRequest = async (req, res) => {
         io.to(receiverSocketId).emit("acceptFriendRequest", id);
       }
 
-      res.status(200).json({ message: "Friend request accepted successfully" });
+      res.status(200).json(user);
     } else {
       res
         .status(400)
@@ -91,7 +91,7 @@ export const removeFriend = async (req, res) => {
         io.to(receiverSocketId).emit("removeFriend", id);
       }
 
-      res.status(200).json({ message: "Friend removed successfully" });
+      res.status(200).json(user);
     } else {
       res.status(400).json({ message: "User is not in your friends list" });
     }
@@ -121,7 +121,7 @@ export const removeFriendRequest = async (req, res) => {
         io.to(receiverSocketId).emit("removeFriendRequest", id);
       }
 
-      res.status(200).json({ message: "Friend request removed successfully" });
+      res.status(200).json(user);
     } else {
       res
         .status(400)
@@ -153,7 +153,7 @@ export const declineFriendRequest = async (req, res) => {
         io.to(receiverSocketId).emit("declineFriendRequest", id);
       }
 
-      res.status(200).json({ message: "Friend request removed successfully" });
+      res.status(200).json(user);
     } else {
       res
         .status(400)

@@ -17,7 +17,22 @@ export const createMoment = async (req, res) => {
       emojis: {},
     });
     await newMoment.save();
-
+    const user = await User.findById(userId);
+    if (newMoment.visibility == "friends") {
+      user.friends.map((friendId) => {
+        const receiverSocketId = getReceiverSocketId(friendId);
+        if (receiverSocketId) {
+          io.to(receiverSocketId).emit("newMoment", newMoment);
+        }
+      });
+    } else if (newMoment.visibility == "public") {
+      io.emit("newMoment", newMoment);
+    } else {
+      const receiverSocketId = getReceiverSocketId(newMoment.userId);
+      if (receiverSocketId) {
+        io.to(receiverSocketId).emit("newMoment", newMoment);
+      }
+    }
     // const moments = await moment.find();
     res.status(201).json(newMoment);
   } catch (err) {
@@ -79,7 +94,7 @@ export const getFeedMoments = async (req, res) => {
           },
         ],
       })
-      .sort({ createdAt: 1 });
+      .sort({ createdAt: -1 });
 
     res.status(200).json(moments);
   } catch (err) {
@@ -107,7 +122,7 @@ export const getFriendsFeedMoments = async (req, res) => {
           },
         ],
       })
-      .sort({ createdAt: 1 });
+      .sort({ createdAt: -1 });
 
     res.status(200).json(moments);
   } catch (err) {
@@ -148,7 +163,7 @@ export const getUserMoments = async (req, res) => {
               },
             ],
           })
-          .sort({ createdAt: 1 });
+          .sort({ createdAt: -1 });
         res.status(200).json(moments);
       } else {
         // If the requested user is not a friend, send only public moments
@@ -221,7 +236,7 @@ export const getArchiveMoments = async (req, res) => {
       .find({
         _id: { $in: user.archiveMoments },
       })
-      .sort({ createdAt: 1 });
+      .sort({ createdAt: -1 });
 
     res.status(200).json(archiveMoments);
   } catch (error) {
@@ -295,7 +310,7 @@ export const getFavoriteMoments = async (req, res) => {
       .find({
         _id: { $in: user.favoriteMoments },
       })
-      .sort({ createdAt: 1 });
+      .sort({ createdAt: -1 });
 
     res.status(200).json(favoriteMoments);
   } catch (error) {
