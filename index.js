@@ -15,6 +15,7 @@ import friendRoutes from "./routes/friends.js";
 import memoryRoutes from "./routes/memory.js";
 import commmentRoutes from "./routes/comments.js";
 import messageRoutes from "./routes/message.js";
+import NotificationRoutes from "./routes/notification.js";
 import { app, server } from "./socket/socket.js";
 
 /* CONFIGURATIONS */
@@ -57,6 +58,7 @@ app.use("/friends", friendRoutes);
 app.use("/memories", memoryRoutes);
 app.use("/comments", commmentRoutes);
 app.use("/messages", messageRoutes);
+app.use("/notifications", NotificationRoutes);
 
 /* MONGOOSE SETUP */
 const PORT = process.env.PORT || 6001;

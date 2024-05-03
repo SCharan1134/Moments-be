@@ -1,5 +1,6 @@
 import moment from "../models/moment.js";
 import User from "../models/User.js";
+import Notification from "../models/NotificationModel.js";
 import fs from "fs";
 import { getReceiverSocketId, io } from "../socket/socket.js";
 
@@ -357,11 +358,61 @@ export const addEmojiToMoment = async (req, res) => {
     if (existingEmoji) {
       if (existingEmoji === emojis) {
         momentToUpdate.emojis.delete(userId);
+        await Notification.findOneAndDelete({
+          moment: momentToUpdate._id,
+          emoji: emojis,
+          from: userId,
+          type: "react",
+          to: momentToUpdate.userId,
+        });
       } else {
         momentToUpdate.emojis.set(userId, emojis);
+        if (momentToUpdate.userId !== userId) {
+          const notification = new Notification({
+            from: userId,
+            to: momentToUpdate.userId,
+            type: "react",
+            moment: momentToUpdate._id,
+            emoji: emojis,
+          });
+
+          await notification.save();
+
+          const receiverSocketId = getReceiverSocketId(momentToUpdate.userId);
+          if (receiverSocketId) {
+            const notifications = await Notification.findById(
+              notification._id
+            ).populate({
+              path: "from moment",
+              select: "_id userName avatarPath momentPath",
+            });
+            io.to(receiverSocketId).emit("newNotification", notifications);
+          }
+        }
       }
     } else {
       momentToUpdate.emojis.set(userId, emojis);
+      if (momentToUpdate.userId !== userId) {
+        const notification = new Notification({
+          from: userId,
+          to: momentToUpdate.userId,
+          type: "react",
+          moment: momentToUpdate._id,
+          emoji: emojis,
+        });
+
+        await notification.save();
+        const receiverSocketId = getReceiverSocketId(momentToUpdate.userId);
+        if (receiverSocketId) {
+          const notifications = await Notification.findById(
+            notification._id
+          ).populate({
+            path: "from moment",
+            select: "_id userName avatarPath momentPath",
+          });
+          io.to(receiverSocketId).emit("newNotification", notifications);
+        }
+      }
     }
 
     // Update the moment with the new emojis
@@ -383,14 +434,13 @@ export const addEmojiToMoment = async (req, res) => {
       emojiReacted: emojis,
     };
 
-    if (momentToUpdate.userId != userId) {
-      const receiverSocketId = getReceiverSocketId(momentToUpdate.userId);
-      if (receiverSocketId) {
-        // io.to(<socket_id>).emit() used to send events to specific client
-        io.to(receiverSocketId).emit("newReaction", response);
-      }
-    }
-
+    // if (momentToUpdate.userId != userId) {
+    //   const receiverSocketId = getReceiverSocketId(momentToUpdate.userId);
+    //   if (receiverSocketId) {
+    //     io.to(receiverSocketId).emit("newReaction", response, updatedMoment);
+    //   }
+    //   io.emit("newemoji", updatedMoment);
+    // }
     res.status(200).json(updatedMoment);
   } catch (err) {
     res.status(404).json({ message: err.message });

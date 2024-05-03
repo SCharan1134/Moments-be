@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import Notification from "../models/NotificationModel.js";
 import { getReceiverSocketId, io } from "../socket/socket.js";
 
 export const addFriendRequest = async (req, res) => {
@@ -53,9 +54,25 @@ export const acceptFriendRequest = async (req, res) => {
       await user.save();
       await friend.save();
 
+      const notification = new Notification({
+        from: id,
+        to: friendId,
+        type: "friends",
+      });
+
+      await notification.save();
       const receiverSocketId = getReceiverSocketId(friendId);
       if (receiverSocketId) {
-        // io.to(<socket_id>).emit() used to send events to specific client
+        const notifications = await Notification.findById(
+          notification._id
+        ).populate({
+          path: "from moment",
+          select: "_id userName avatarPath momentPath",
+        });
+        io.to(receiverSocketId).emit("newNotification", notifications);
+      }
+
+      if (receiverSocketId) {
         io.to(receiverSocketId).emit("acceptFriendRequest", id);
       }
 

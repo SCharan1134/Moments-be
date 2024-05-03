@@ -3,6 +3,8 @@ import http from "http";
 import express from "express";
 import Conversation from "../models/ConversationModel.js";
 import Message from "../models/MessageModel.js";
+import Notification from "../models/NotificationModel.js";
+import { read } from "fs";
 
 const app = express();
 
@@ -47,6 +49,14 @@ io.on("connection", (socket) => {
         { $set: { "lastMessage.seen": true } }
       );
       io.to(userSocketMap[userId]).emit("messagesSeen", { conversationId });
+    } catch (error) {
+      console.log(error);
+    }
+  });
+  socket.on("markNotificationsAsSeen", async ({ userId }) => {
+    try {
+      await Notification.updateMany({ to: userId }, { read: true });
+      // io.to(userSocketMap[userId]).emit("notificationSeen", { conversationId });
     } catch (error) {
       console.log(error);
     }

@@ -1,7 +1,9 @@
 import mongoose from "mongoose";
 import moment from "../models/moment.js";
 import Comment from "../models/Comment.js";
+import Notification from "../models/NotificationModel.js";
 import User from "../models/User.js";
+import { getReceiverSocketId, io } from "../socket/socket.js";
 
 export const createMomentComment = async (req, res) => {
   try {
@@ -28,9 +30,30 @@ export const createMomentComment = async (req, res) => {
 
     // Add the comment ID to the comments array in the moment
     currentMoment.comments.push(savedComment._id);
-
     // Save the updated moment
     await currentMoment.save();
+
+    const notification = new Notification({
+      from: userId,
+      to: currentMoment.userId,
+      type: "comment",
+      moment: currentMoment._id,
+      comment: description,
+    });
+
+    await notification.save();
+
+    const receiverSocketId = getReceiverSocketId(currentMoment.userId);
+    if (receiverSocketId) {
+      const notifications = await Notification.findById(
+        notification._id
+      ).populate({
+        path: "from moment",
+        select: "_id userName avatarPath momentPath",
+      });
+      io.to(receiverSocketId).emit("newNotification", notifications);
+    }
+
     res.status(201).json(savedComment);
   } catch (error) {
     console.error("Error creating moment comment:", error);
